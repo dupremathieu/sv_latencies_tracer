@@ -1,0 +1,22 @@
+# Build
+build/
+*.o
+*.d
+
+# Binaries
+sv-subscriber
+sv-capture-agent
+sv-collector
+test_sv_parser
+test_histogram
+test_drop_detector
+
+# IDE
+.vscode/
+.idea/
+compile_commands.json
+
+# OS
+.DS_Store
+*.swp
+*~
