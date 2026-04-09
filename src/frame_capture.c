@@ -116,17 +116,7 @@ int capture_open(struct sv_capture_ctx *ctx, const char *ifname,
 		goto err;
 	}
 
-	/* Enable hardware timestamping */
-	int ts_flags = SOF_TIMESTAMPING_RAW_HARDWARE |
-		       SOF_TIMESTAMPING_RX_HARDWARE |
-		       SOF_TIMESTAMPING_SOFTWARE;
-	if (setsockopt(ctx->sock_fd, SOL_SOCKET, SO_TIMESTAMPING,
-		       &ts_flags, sizeof(ts_flags)) < 0) {
-		perror("capture: SO_TIMESTAMPING");
-		/* Non-fatal — SW timestamps will still work */
-	}
-
-	/* Also enable HW timestamping on the NIC via ioctl */
+	/* Try to enable HW timestamping on the NIC via ioctl */
 	struct ifreq ifr;
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
@@ -135,23 +125,47 @@ int capture_open(struct sv_capture_ctx *ctx, const char *ifname,
 		.rx_filter = HWTSTAMP_FILTER_ALL,
 	};
 	ifr.ifr_data = (void *)&hwcfg;
-	if (ioctl(ctx->sock_fd, SIOCSHWTSTAMP, &ifr) < 0) {
-		/* Non-fatal — HW timestamps might already be configured or
-		 * unsupported */
+	ctx->hw_timestamping = (ioctl(ctx->sock_fd, SIOCSHWTSTAMP, &ifr) == 0);
+
+	int ts_flags;
+	if (ctx->hw_timestamping) {
+		ts_flags = SOF_TIMESTAMPING_RAW_HARDWARE |
+			   SOF_TIMESTAMPING_RX_HARDWARE |
+			   SOF_TIMESTAMPING_SOFTWARE |
+			   SOF_TIMESTAMPING_RX_SOFTWARE;
+	} else {
+		fprintf(stderr,
+			"capture: WARNING: hardware timestamping not available "
+			"on '%s', falling back to software timestamping\n",
+			ifname);
+		ts_flags = SOF_TIMESTAMPING_SOFTWARE |
+			   SOF_TIMESTAMPING_RX_SOFTWARE;
+	}
+
+	if (setsockopt(ctx->sock_fd, SOL_SOCKET, SO_TIMESTAMPING,
+		       &ts_flags, sizeof(ts_flags)) < 0) {
+		perror("capture: SO_TIMESTAMPING");
+		/* Non-fatal — timestamps may still be available */
 	}
 
 	/* Set up PHC clock */
 	if (phc_path) {
 		ctx->phc_clockid = phc_path_to_clockid(phc_path);
-	} else {
-		/* Try auto-detection */
+	} else if (ctx->hw_timestamping) {
+		/* Try auto-detection only when HW timestamping is active */
 		char auto_path[64];
 		if (capture_discover_phc(ifname, auto_path,
 					 sizeof(auto_path)) == 0) {
 			ctx->phc_clockid = phc_path_to_clockid(auto_path);
 		} else {
+			fprintf(stderr,
+				"capture: WARNING: could not discover PHC for "
+				"'%s', using CLOCK_REALTIME for app timestamps\n",
+				ifname);
 			ctx->phc_clockid = CLOCK_REALTIME;
 		}
+	} else {
+		ctx->phc_clockid = CLOCK_REALTIME;
 	}
 
 	return 0;

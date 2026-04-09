@@ -2,6 +2,7 @@
 #ifndef SV_FRAME_CAPTURE_H
 #define SV_FRAME_CAPTURE_H
 
+#include <stdbool.h>
 #include "common.h"
 
 #define SV_FRAME_MAX_LEN 1518
@@ -10,6 +11,7 @@ struct sv_capture_ctx {
 	int sock_fd;
 	int if_index;
 	clockid_t phc_clockid;
+	bool hw_timestamping;  /* true if NIC HW timestamping is active */
 };
 
 struct sv_captured_frame {

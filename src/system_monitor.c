@@ -6,6 +6,7 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <net/if.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,14 +36,21 @@ static void *link_monitor_thread(void *arg)
 		return NULL;
 	}
 
+	struct pollfd pfd = { .fd = fd, .events = POLLIN };
 	char buf[4096];
 	while (ctx->running) {
-		ssize_t n = recv(fd, buf, sizeof(buf), 0);
-		if (n < 0) {
+		int ret = poll(&pfd, 1, 200); /* 200ms timeout */
+		if (ret < 0) {
 			if (errno == EINTR)
 				continue;
 			break;
 		}
+		if (ret == 0)
+			continue; /* timeout — recheck ctx->running */
+
+		ssize_t n = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
+		if (n < 0)
+			break;
 
 		for (struct nlmsghdr *nh = (struct nlmsghdr *)buf;
 		     NLMSG_OK(nh, (size_t)n); nh = NLMSG_NEXT(nh, n)) {
