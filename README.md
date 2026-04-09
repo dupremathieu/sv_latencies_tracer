@@ -1,6 +1,6 @@
 # SV Latencies Tracer
 
-IEC 61850 Sample Values (SV) latency measurement tool for the [SEAPATH](https://seapath.github.io/) virtualization platform. Captures SV Ethernet frames (EtherType 0x88BA) with hardware timestamps and measures NIC-to-application delivery latency, exposing results as Prometheus metrics.
+IEC 61850 Sample Values (SV) latency measurement tool for the [SEAPATH](https://lfenergy.org/projects/seapath/) virtualization platform. Captures SV Ethernet frames (EtherType 0x88BA) with hardware timestamps and measures NIC-to-application delivery latency, exposing results as Prometheus metrics.
 
 ## Features
 
