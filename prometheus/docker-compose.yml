@@ -1,0 +1,9 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "19090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
