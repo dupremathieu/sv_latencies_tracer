@@ -12,445 +12,292 @@
       }
     ]
   },
-  "description": "IEC 61850 SV latency metrics from sv-subscriber",
+  "description": "Distributions of SV timestamp and software processing latencies",
   "editable": true,
-  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
   "links": [],
   "panels": [
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Total number of dropped SV frames during the selected time range.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "mappings": [
-            {
-              "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
-      "id": 1,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [ { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "sv_link_up", "refId": "A" } ],
-      "title": "Link",
-      "type": "stat"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 80, "showPoints": "never" },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 4, "w": 5, "x": 4, "y": 0 },
-      "id": 2,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(sv_frames_total[5m]))",
-          "legendFormat": "frames/s",
-          "refId": "A"
-        }
-      ],
-      "title": "Frame rate",
-      "type": "stat"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 80, "showPoints": "never" },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 4, "w": 5, "x": 9, "y": 0 },
-      "id": 3,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(sv_drops_total[5m]))",
-          "legendFormat": "drops/s",
-          "refId": "A"
-        }
-      ],
-      "title": "Drop rate",
-      "type": "stat"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [ { "options": { "match": "none", "result": { "text": "" } }, "type": "value" } ],
+          "decimals": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.001 },
-              { "color": "red", "value": 0.01 }
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
             ]
           },
-          "unit": "percentunit"
+          "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 5, "x": 14, "y": 0 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "id": 4,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false },
         "textMode": "auto"
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(sv_drops_total[5m])) / clamp_min(sum(rate(sv_frames_total[5m])), 1)",
-          "legendFormat": "drop ratio",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(sv_drops_total[$__range]))",
+          "legendFormat": "SV drops",
           "refId": "A"
         }
       ],
-      "title": "Drop ratio",
+      "title": "SV drops",
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Total number of SV frames received during the selected time range.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
-          "mappings": [],
+          "decimals": 0,
           "thresholds": {
             "mode": "absolute",
-            "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ]
+            "steps": [ { "color": "green", "value": null } ]
           },
-          "unit": "none"
+          "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 0 },
-      "id": 5,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 6,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false },
         "textMode": "auto"
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sv_kernel_oops_total + sv_kernel_panic_total + sv_rt_throttle_total",
-          "legendFormat": "system events",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(sv_frames_total[$__range]))",
+          "legendFormat": "SV total",
           "refId": "A"
         }
       ],
-      "title": "Kernel/RT events",
+      "title": "SV total",
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Maximum NIC-to-application reception latency observed since the tracer started.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 30, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "none" } },
-          "unit": "none"
+          "color": { "mode": "thresholds" },
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 }
+            ]
+          },
+          "unit": "ms"
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
-      "id": 6,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (appid, svid) (rate(sv_frames_total[5m]))",
-          "legendFormat": "{{svid}} (0x{{appid}})",
-          "refId": "A"
-        }
-      ],
-      "title": "Frames per stream",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 30, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "none" } },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
-      "id": 7,
-      "options": {
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (appid, svid) (rate(sv_drops_total[5m]))",
-          "legendFormat": "{{svid}} (0x{{appid}})",
-          "refId": "A"
-        }
-      ],
-      "title": "Drops per stream",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 12 },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "id": 8,
-      "title": "Latency (NIC to app)",
-      "type": "row"
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "max(sv_capture_latency_us_max) / 1000",
+          "legendFormat": "Maximum latency",
+          "refId": "A"
+        }
+      ],
+      "title": "Maximum latency (ms)",
+      "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "p50 / p90 / p99 of NIC-to-application latency per stream.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Mean latency from the NIC hardware timestamp to application reception for all SV frames received during the selected rate window.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 10, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "none" } },
-          "unit": "µs"
+          "decimals": 2,
+          "unit": "ms"
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 4 },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [ "lastNotNull", "mean", "max" ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(sum by (appid, svid) (rate(sv_capture_latency_us_sum[$__rate_interval])) / sum by (appid, svid) (rate(sv_capture_latency_us_count[$__rate_interval]))) / 1000",
+          "format": "time_series",
+          "legendFormat": "{{appid}} / {{svid}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Mean NIC-to-reception latency (ms)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Maximum NIC-to-application latency observed during the previous 10 seconds. Millisecond-scale outliers remain visible.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "decimals": 2,
+          "unit": "ms",
+          "custom": {
+            "axisLabel": "Maximum latency",
+            "axisPlacement": "left",
+            "scaleDistribution": { "type": "linear" }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
       "id": 9,
       "options": {
-        "legend": { "calcs": [ "lastNotNull" ], "displayMode": "list", "placement": "bottom" },
+        "legend": {
+          "calcs": [ "lastNotNull", "max" ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum by (le, appid, svid) (rate(sv_capture_latency_us_bucket[5m])))",
-          "legendFormat": "p50 {{svid}} (0x{{appid}})",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(1, sum by (le, appid, svid) (increase(sv_capture_latency_us_bucket[10s]))) / 1000",
+          "format": "time_series",
+          "legendFormat": "{{appid}} / {{svid}}",
           "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.90, sum by (le, appid, svid) (rate(sv_capture_latency_us_bucket[5m])))",
-          "legendFormat": "p90 {{svid}} (0x{{appid}})",
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum by (le, appid, svid) (rate(sv_capture_latency_us_bucket[5m])))",
-          "legendFormat": "p99 {{svid}} (0x{{appid}})",
-          "refId": "C"
         }
       ],
-      "title": "Capture latency percentiles",
+      "title": "Maximum latency over time (ms)",
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Total NIC-to-app latency count rate per stream (samples/s).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Number of received SV frames for each exact NIC-to-application reception latency since the tracer started. One bar equals one microsecond, including values above 35000 us.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 10, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "none" } },
-          "unit": "sps"
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisGridShow": true,
+            "axisLabel": "Occurrences",
+            "axisPlacement": "left",
+            "scaleDistribution": { "type": "log", "log": 10 }
+          },
+          "decimals": 0,
+          "min": 1,
+          "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "latency_us_sort"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              }
+            ]
+          }
+        ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
-      "id": 10,
+      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 24 },
+      "id": 5,
       "options": {
-        "legend": { "calcs": [ "lastNotNull" ], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
+        "bucketOffset": 0,
+        "bucketSize": 0,
+        "barWidth": 1,
+        "combine": false,
+        "groupWidth": 1,
+        "orientation": "vertical",
+        "showValue": "always",
+        "xField": "latency_us_sort",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+          "xTickLabelSpacing": 100
       },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (appid, svid) (rate(sv_capture_latency_us_count[5m]))",
-          "legendFormat": "{{svid}} (0x{{appid}})",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+           "expr": "label_replace(label_replace(label_replace(label_replace(label_replace(sum by (latency_us) (sv_capture_latency_us_observations_total) > 0, \"latency_us_sort\", \"00$1\", \"latency_us\", \"([0-9])\"), \"latency_us_sort\", \"0$1\", \"latency_us\", \"([0-9]{2})\"), \"latency_us_sort\", \"$1\", \"latency_us\", \"([0-9]{3})\"), \"latency_us_sort\", \"0$1\", \"latency_us\", \"([0-9]{4})\"), \"latency_us_sort\", \"$1\", \"latency_us\", \"([0-9]{5})\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{latency_us}}",
           "refId": "A"
         }
       ],
-      "title": "Capture latency sample rate",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
-      "id": 11,
-      "title": "Latency (NIC to parsed)",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "p50 / p90 / p99 of NIC-to-parsed latency per stream.",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 10, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "none" } },
-          "unit": "µs"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
-      "id": 12,
-      "options": {
-        "legend": { "calcs": [ "lastNotNull" ], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
+      "transformations": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum by (le, appid, svid) (rate(sv_parsed_latency_us_bucket[5m])))",
-          "legendFormat": "p50 {{svid}} (0x{{appid}})",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.90, sum by (le, appid, svid) (rate(sv_parsed_latency_us_bucket[5m])))",
-          "legendFormat": "p90 {{svid}} (0x{{appid}})",
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum by (le, appid, svid) (rate(sv_parsed_latency_us_bucket[5m])))",
-          "legendFormat": "p99 {{svid}} (0x{{appid}})",
-          "refId": "C"
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "desc": false,
+                "field": "latency_us_sort"
+              }
+            ]
+          }
         }
       ],
-      "title": "Parsed latency percentiles",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
-      "id": 13,
-      "title": "SV frame intervals",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Nominal interval (HW timestamp) percentiles per stream.",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 10, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "none" } },
-          "unit": "µs"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
-      "id": 14,
-      "options": {
-        "legend": { "calcs": [ "lastNotNull" ], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum by (le, appid, svid) (rate(sv_sv_interval_hw_us_bucket[5m])))",
-          "legendFormat": "p50 {{svid}} (0x{{appid}})",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum by (le, appid, svid) (rate(sv_sv_interval_hw_us_bucket[5m])))",
-          "legendFormat": "p99 {{svid}} (0x{{appid}})",
-          "refId": "B"
-        }
-      ],
-      "title": "Interval (HW) percentiles",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Nominal interval (app timestamp) percentiles per stream.",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "fillOpacity": 10, "lineWidth": 1, "showPoints": "never", "stacking": { "mode": "none" } },
-          "unit": "µs"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
-      "id": 15,
-      "options": {
-        "legend": { "calcs": [ "lastNotNull" ], "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum by (le, appid, svid) (rate(sv_sv_interval_app_us_bucket[5m])))",
-          "legendFormat": "p50 {{svid}} (0x{{appid}})",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum by (le, appid, svid) (rate(sv_sv_interval_app_us_bucket[5m])))",
-          "legendFormat": "p99 {{svid}} (0x{{appid}})",
-          "refId": "B"
-        }
-      ],
-      "title": "Interval (app) percentiles",
-      "type": "timeseries"
+      "title": "NIC-to-reception distribution by exact microsecond",
+      "type": "barchart"
     }
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": [ "sv", "iec61850", "latency" ],
-  "templating": {
-    "list": []
-  },
+  "tags": [ "sv", "iec61850", "latency", "histogram" ],
+  "templating": { "list": [] },
   "time": { "from": "now-30m", "to": "now" },
-  "timepicker": {},
   "timezone": "browser",
-  "title": "SV Latencies",
+  "title": "SV Latency Distributions",
   "uid": "sv-latencies-dashboard",
-  "version": 1,
+  "version": 9,
   "weekStart": ""
 }

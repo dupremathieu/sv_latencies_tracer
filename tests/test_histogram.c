@@ -2,6 +2,7 @@
 #include "histogram.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static void test_basic_record(void)
 {
@@ -13,7 +14,8 @@ static void test_basic_record(void)
 	histogram_record(&h, 100);
 	histogram_record(&h, 200);
 
-	uint64_t buckets[SV_HISTOGRAM_BINS];
+	uint64_t *buckets = malloc(sizeof(*buckets) * SV_HISTOGRAM_BINS);
+	assert(buckets != NULL);
 	uint64_t overflow, sum, count;
 	histogram_snapshot(&h, buckets, &overflow, &sum, &count);
 
@@ -22,6 +24,9 @@ static void test_basic_record(void)
 	assert(overflow == 0);
 	assert(sum == 400);
 	assert(count == 3);
+	assert(histogram_max(&h) == 200);
+	free(buckets);
+	histogram_destroy(&h);
 	printf(" OK\n");
 }
 
@@ -31,16 +36,19 @@ static void test_overflow(void)
 	struct sv_histogram h;
 	histogram_init(&h);
 
-	histogram_record(&h, 600);
+	histogram_record(&h, SV_HISTOGRAM_MAX_US + 1);
 
-	uint64_t buckets[SV_HISTOGRAM_BINS];
+	uint64_t *buckets = malloc(sizeof(*buckets) * SV_HISTOGRAM_BINS);
+	assert(buckets != NULL);
 	uint64_t overflow, sum, count;
 	histogram_snapshot(&h, buckets, &overflow, &sum, &count);
 
 	assert(overflow == 1);
 	assert(count == 1);
-	/* Overflow values are capped at SV_HISTOGRAM_BINS for sum */
-	assert(sum == SV_HISTOGRAM_BINS);
+	assert(histogram_max(&h) == SV_HISTOGRAM_MAX_US + 1);
+	assert(sum == SV_HISTOGRAM_MAX_US + 1);
+	free(buckets);
+	histogram_destroy(&h);
 	printf(" OK\n");
 }
 
@@ -52,12 +60,15 @@ static void test_negative_clamped(void)
 
 	histogram_record(&h, -5);
 
-	uint64_t buckets[SV_HISTOGRAM_BINS];
+	uint64_t *buckets = malloc(sizeof(*buckets) * SV_HISTOGRAM_BINS);
+	assert(buckets != NULL);
 	uint64_t overflow, sum, count;
 	histogram_snapshot(&h, buckets, &overflow, &sum, &count);
 
 	assert(buckets[0] == 1);
 	assert(count == 1);
+	free(buckets);
+	histogram_destroy(&h);
 	printf(" OK\n");
 }
 
@@ -69,16 +80,20 @@ static void test_boundary(void)
 
 	histogram_record(&h, 0);
 	histogram_record(&h, 500);
-	histogram_record(&h, 501);
+	histogram_record(&h, SV_HISTOGRAM_MAX_US + 1);
 
-	uint64_t buckets[SV_HISTOGRAM_BINS];
+	uint64_t *buckets = malloc(sizeof(*buckets) * SV_HISTOGRAM_BINS);
+	assert(buckets != NULL);
 	uint64_t overflow, sum, count;
 	histogram_snapshot(&h, buckets, &overflow, &sum, &count);
 
 	assert(buckets[0] == 1);
 	assert(buckets[500] == 1);
 	assert(overflow == 1);
+	assert(sum == SV_HISTOGRAM_MAX_US + 501);
 	assert(count == 3);
+	free(buckets);
+	histogram_destroy(&h);
 	printf(" OK\n");
 }
 

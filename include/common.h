@@ -11,7 +11,8 @@
 #define SV_ETHERTYPE      0x88BA
 #define VLAN_ETHERTYPE    0x8100
 #define SV_SVID_MAX_LEN   65
-#define SV_HISTOGRAM_BINS 501   /* 0..500 µs inclusive */
+#define SV_HISTOGRAM_MAX_US 35000
+#define SV_HISTOGRAM_BINS (SV_HISTOGRAM_MAX_US + 1) /* 0..35000 µs */
 #define SV_MAX_STREAMS    64
 
 struct sv_stream_id {
@@ -30,12 +31,26 @@ struct sv_timestamp {
 	uint32_t nsec;
 };
 
+enum sv_timestamp_source {
+	SV_TIMESTAMP_SOURCE_HARDWARE,
+	SV_TIMESTAMP_SOURCE_SOFTWARE,
+	SV_TIMESTAMP_SOURCE_APPLICATION,
+};
+
 static inline int64_t ts_delta_us(const struct sv_timestamp *a,
 				  const struct sv_timestamp *b)
 {
 	int64_t ds = (int64_t)a->sec - (int64_t)b->sec;
 	int64_t dn = (int64_t)a->nsec - (int64_t)b->nsec;
 	return ds * 1000000 + dn / 1000;
+}
+
+static inline int64_t ts_delta_ns(const struct sv_timestamp *a,
+				  const struct sv_timestamp *b)
+{
+	int64_t ds = (int64_t)a->sec - (int64_t)b->sec;
+	int64_t dn = (int64_t)a->nsec - (int64_t)b->nsec;
+	return ds * 1000000000 + dn;
 }
 
 static inline void sv_copy_svid(char *dst, const char *src)

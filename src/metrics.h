@@ -9,22 +9,33 @@
 /* Per-stream metric data */
 struct sv_stream_metrics {
 	struct sv_stream_id id;
-	struct sv_histogram capture_latency;  /* T_app - T_hw */
-	struct sv_histogram parsed_latency;   /* T_parsed - T_hw */
-	struct sv_histogram interval_hw;      /* inter-sample, HW TS */
+	struct sv_histogram capture_latency;  /* T_app - T_rx */
+	struct sv_histogram parsed_latency;   /* T_parsed - T_rx */
+	struct sv_histogram hw_to_app_latency; /* PHC app time - HW RX TS */
+	struct sv_histogram sw_to_app_latency; /* realtime app time - SW RX TS */
+	struct sv_histogram hw_to_sw_latency;  /* estimated driver RX duration */
+	struct sv_histogram interval_hw;      /* inter-sample, selected RX TS */
 	struct sv_histogram interval_app;     /* inter-sample, app TS */
+	_Atomic int64_t interval_hw_current_ns; /* latest inter-frame interval */
+	_Atomic int64_t interval_app_current_ns;
+	_Atomic uint64_t timestamp_hardware_total;
+	_Atomic uint64_t timestamp_software_total;
+	_Atomic uint64_t timestamp_application_total;
 	int active;
 
 	/* Interval bookkeeping (guarded by metrics_state.interval_lock) */
 	uint16_t last_smp_cnt;
-	struct sv_timestamp last_hw_ts;
+	struct sv_timestamp last_rx_ts;
 	struct sv_timestamp last_app_ts;
+	enum sv_timestamp_source last_timestamp_source;
 	int have_prev;
 };
 
 struct sv_metrics_state {
 	struct sv_stream_metrics streams[SV_MAX_STREAMS];
 	int num_streams;
+	int histogram_max_us;
+	pthread_mutex_t stream_lock;
 	pthread_mutex_t interval_lock;
 
 	/* System monitor counters */
@@ -43,14 +54,20 @@ struct sv_stream_metrics *metrics_get_stream(struct sv_metrics_state *ms,
 
 void metrics_init(struct sv_metrics_state *ms);
 
+void metrics_init_with_max(struct sv_metrics_state *ms, int histogram_max_us);
+
 /*
- * Record the inter-sample interval between two consecutive SV frames of the
- * same stream (sequential smpCnt, no drops). Updates interval bookkeeping.
+ * Record the interval between two successively received SV frames of the same
+ * stream. The first frame initializes the timestamps without recording a value.
  */
 int metrics_record_interval(struct sv_metrics_state *ms, uint16_t app_id,
 			    const char *sv_id, uint16_t smp_cnt,
-			    const struct sv_timestamp *hw_ts,
-			    const struct sv_timestamp *app_ts);
+			    const struct sv_timestamp *rx_ts,
+			    const struct sv_timestamp *app_ts,
+			    enum sv_timestamp_source source);
+
+void metrics_record_timestamp_source(struct sv_stream_metrics *stream,
+				     enum sv_timestamp_source source);
 
 /*
  * Format all metrics in Prometheus text exposition format.

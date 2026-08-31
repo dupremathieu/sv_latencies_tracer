@@ -11,7 +11,10 @@ struct sv_sysmon_ctx {
 	pthread_t link_thread;
 	pthread_t kmsg_thread;
 	pthread_t rt_thread;
-	volatile int running;
+	_Atomic int running;
+	int link_started;
+	int kmsg_started;
+	int rt_started;
 };
 
 /*

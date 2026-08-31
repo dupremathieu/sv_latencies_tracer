@@ -25,6 +25,7 @@ static void signal_handler(int sig)
 int main(int argc, char **argv)
 {
 	struct sv_config cfg;
+	int status = 0;
 	config_set_defaults(&cfg);
 	cfg.role = SV_ROLE_CAPTURE_AGENT;
 
@@ -41,7 +42,8 @@ int main(int argc, char **argv)
 
 	struct sv_capture_ctx capture;
 	const char *phc = cfg.phc_device_set ? cfg.phc_device : NULL;
-	if (capture_open(&capture, cfg.interface, phc) < 0)
+	if (capture_open(&capture, cfg.interface, phc, cfg.vlan_id,
+			 cfg.enable_hw_timestamps) < 0)
 		return 1;
 
 	/* Connect to collector */
@@ -101,7 +103,7 @@ int main(int argc, char **argv)
 		r->app_id = info.app_id;
 		sv_copy_svid(r->sv_id, info.sv_id);
 		r->smp_cnt = info.smp_cnt;
-		r->hw_ts = frame.hw_ts;
+		r->hw_ts = frame.rx_ts;
 		batch_idx++;
 
 		if (batch_idx >= cfg.batch_size) {
@@ -109,7 +111,13 @@ int main(int argc, char **argv)
 			ssize_t len = proto_serialize_agent_batch(
 				batch, batch_idx, &buf);
 			if (len > 0) {
-				proto_send_batch(sock, buf, (size_t)len);
+				if (proto_send_batch(sock, buf, (size_t)len) < 0) {
+					perror("send batch to collector");
+					free(buf);
+					batch_idx = 0;
+					status = 1;
+					break;
+				}
 				free(buf);
 			}
 			batch_idx = 0;
@@ -122,7 +130,10 @@ int main(int argc, char **argv)
 		ssize_t len = proto_serialize_agent_batch(
 			batch, batch_idx, &buf);
 		if (len > 0) {
-			proto_send_batch(sock, buf, (size_t)len);
+			if (proto_send_batch(sock, buf, (size_t)len) < 0) {
+				perror("send final batch to collector");
+				status = 1;
+			}
 			free(buf);
 		}
 	}
@@ -130,5 +141,5 @@ int main(int argc, char **argv)
 	free(batch);
 	close(sock);
 	capture_close(&capture);
-	return 0;
+	return status;
 }

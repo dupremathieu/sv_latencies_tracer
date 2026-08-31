@@ -29,7 +29,7 @@ Three binaries, two deployment scenarios:
 ```
 include/common.h          - Shared types (sv_timestamp, sv_stream_id, sv_frame_info)
 src/sv_parser.{h,c}       - Minimal BER/ASN.1 SV frame parser (appID, svID, smpCnt)
-src/histogram.{h,c}       - Lock-free latency histogram (1µs resolution, 0-500µs)
+src/histogram.{h,c}       - Lock-free latency histogram (1µs resolution, 0-35000µs)
 src/drop_detector.{h,c}   - smpCnt gap detection per stream
 src/frame_capture.{h,c}   - AF_PACKET + SO_TIMESTAMPING + BPF filter + PHC clock
 src/metrics.{h,c}         - Prometheus text format exporter + embedded HTTP server

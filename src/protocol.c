@@ -190,6 +190,8 @@ static int send_all(int fd, const void *buf, size_t len)
 				continue;
 			return -1;
 		}
+		if (n == 0)
+			return -1;
 		p += n;
 		len -= (size_t)n;
 	}

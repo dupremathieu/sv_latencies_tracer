@@ -15,7 +15,7 @@ BUILDDIR := build
 # Source files per binary
 COMMON_SRCS := src/sv_parser.c src/histogram.c src/drop_detector.c \
                src/frame_capture.c src/metrics.c src/system_monitor.c \
-               src/config.c src/protocol.c
+               src/config.c src/protocol.c src/live_histogram.c
 COMMON_OBJS := $(patsubst src/%.c,$(BUILDDIR)/%.o,$(COMMON_SRCS))
 
 SUBSCRIBER_SRCS := src/main_subscriber.c

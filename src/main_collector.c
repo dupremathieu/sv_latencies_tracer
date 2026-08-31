@@ -115,7 +115,8 @@ static void collector_match_subscriber(struct collector_state *st,
 	}
 
 	metrics_record_interval(&st->metrics, r->app_id, r->sv_id,
-				r->smp_cnt, &hw_ts, &r->app_ts);
+				r->smp_cnt, &hw_ts, &r->app_ts,
+				SV_TIMESTAMP_SOURCE_HARDWARE);
 
 	/* Track drops via subscriber records */
 	struct sv_frame_info info = {
@@ -123,7 +124,7 @@ static void collector_match_subscriber(struct collector_state *st,
 		.smp_cnt = r->smp_cnt,
 	};
 	sv_copy_svid(info.sv_id, r->sv_id);
-	drop_tracker_process(&st->drops, &info);
+	drop_tracker_process_at(&st->drops, &info, &r->app_ts);
 }
 
 struct client_thread_args {
@@ -193,7 +194,8 @@ int main(int argc, char **argv)
 	drop_tracker_init(&state.drops);
 	pthread_mutex_init(&state.lock, NULL);
 
-	if (metrics_server_start(cfg.prometheus_port, &state.metrics,
+	if (cfg.prometheus_enabled &&
+	    metrics_server_start(cfg.prometheus_port, &state.metrics,
 				 &state.drops) < 0)
 		return 1;
 
@@ -256,7 +258,8 @@ int main(int argc, char **argv)
 	}
 
 	close(listen_fd);
-	metrics_server_stop();
+	if (cfg.prometheus_enabled)
+		metrics_server_stop();
 	pthread_mutex_destroy(&state.lock);
 	return 0;
 }

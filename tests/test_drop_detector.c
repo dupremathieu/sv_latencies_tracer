@@ -72,10 +72,10 @@ static void test_wrap_around(void)
 	struct sv_drop_tracker dt;
 	drop_tracker_init(&dt);
 
-	struct sv_frame_info info = make_info(0x4000, "S1", 65534);
+	struct sv_frame_info info = make_info(0x4000, "S1", 3998);
 	drop_tracker_process(&dt, &info);
 
-	info.smp_cnt = 65535;
+	info.smp_cnt = 3999;
 	assert(drop_tracker_process(&dt, &info) == 0);
 
 	info.smp_cnt = 0; /* wrap */
@@ -95,12 +95,94 @@ static void test_wrap_with_gap(void)
 	struct sv_drop_tracker dt;
 	drop_tracker_init(&dt);
 
-	struct sv_frame_info info = make_info(0x4000, "S1", 65534);
+	struct sv_frame_info info = make_info(0x4000, "S1", 3998);
 	drop_tracker_process(&dt, &info);
 
-	info.smp_cnt = 1; /* skipped 65535 and 0 */
+	info.smp_cnt = 1; /* skipped 3999 and 0 */
 	int gap = drop_tracker_process(&dt, &info);
 	assert(gap == 2);
+	printf(" OK\n");
+}
+
+static void test_duplicate_ignored(void)
+{
+	printf("  test_duplicate_ignored...");
+	struct sv_drop_tracker dt;
+	drop_tracker_init(&dt);
+
+	struct sv_frame_info info = make_info(0x4000, "S1", 100);
+	drop_tracker_process(&dt, &info);
+	assert(drop_tracker_process(&dt, &info) == 0);
+
+	info.smp_cnt = 101;
+	assert(drop_tracker_process(&dt, &info) == 0);
+	const struct sv_drop_state *s = drop_tracker_find(&dt, 0x4000, "S1");
+	assert(atomic_load(&s->frames_dropped) == 0);
+	printf(" OK\n");
+}
+
+static void test_late_frame_ignored(void)
+{
+	printf("  test_late_frame_ignored...");
+	struct sv_drop_tracker dt;
+	drop_tracker_init(&dt);
+
+	struct sv_frame_info info = make_info(0x4000, "S1", 100);
+	drop_tracker_process(&dt, &info);
+
+	info.smp_cnt = 99;
+	assert(drop_tracker_process(&dt, &info) == 0);
+	info.smp_cnt = 101;
+	assert(drop_tracker_process(&dt, &info) == 0);
+
+	const struct sv_drop_state *s = drop_tracker_find(&dt, 0x4000, "S1");
+	assert(atomic_load(&s->frames_dropped) == 0);
+	printf(" OK\n");
+}
+
+static void test_reset_to_zero(void)
+{
+	printf("  test_reset_to_zero...");
+	struct sv_drop_tracker dt;
+	drop_tracker_init(&dt);
+
+	struct sv_frame_info info = make_info(0x4000, "S1", 100);
+	drop_tracker_process(&dt, &info);
+
+	info.smp_cnt = 0; /* producer restart */
+	assert(drop_tracker_process(&dt, &info) == 0);
+
+	const struct sv_drop_state *s = drop_tracker_find(&dt, 0x4000, "S1");
+	assert(s != NULL);
+	assert(s->last_smp_cnt == 0);
+	assert(atomic_load(&s->frames_dropped) == 0);
+
+	info.smp_cnt = 1;
+	assert(drop_tracker_process(&dt, &info) == 0);
+	assert(s->last_smp_cnt == 1);
+	assert(atomic_load(&s->frames_dropped) == 0);
+	printf(" OK\n");
+}
+
+static void test_idle_stream_restart(void)
+{
+	printf("  test_idle_stream_restart...");
+	struct sv_drop_tracker dt;
+	drop_tracker_init(&dt);
+
+	struct sv_frame_info info = make_info(0x4000, "S1", 2500);
+	struct sv_timestamp ts = { .sec = 10, .nsec = 0 };
+	drop_tracker_process_at(&dt, &info, &ts);
+
+	info.smp_cnt = 1245;
+	ts.sec = 12;
+	assert(drop_tracker_process_at(&dt, &info, &ts) == 0);
+	info.smp_cnt = 1246;
+	ts.nsec = 250000;
+	assert(drop_tracker_process_at(&dt, &info, &ts) == 0);
+
+	const struct sv_drop_state *s = drop_tracker_find(&dt, 0x4000, "S1");
+	assert(atomic_load(&s->frames_dropped) == 0);
 	printf(" OK\n");
 }
 
@@ -132,6 +214,10 @@ int main(void)
 	test_multi_drop();
 	test_wrap_around();
 	test_wrap_with_gap();
+	test_duplicate_ignored();
+	test_late_frame_ignored();
+	test_reset_to_zero();
+	test_idle_stream_restart();
 	test_multiple_streams();
 	printf("All drop detector tests passed.\n");
 	return 0;

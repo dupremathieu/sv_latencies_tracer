@@ -19,17 +19,24 @@ struct sv_config {
 	char     interface[64];
 	char     phc_device[64];
 	int      phc_device_set;
+	int      enable_hw_timestamps;
 	int      vlan_id;         /* -1 = accept all */
 	enum sv_mode mode;
 	enum sv_role role;
 	char     collector_addr[128];
 	uint16_t collector_port;
 	uint16_t prometheus_port;
+	int      prometheus_enabled;
 	int      histogram_max_us;
 	int      batch_size;
 	int      cpu_affinity;    /* -1 = unset */
 	int      sched_fifo;
 	int      sched_priority;
+	int      live_histogram;
+	int      live_threshold_us;
+	int      warmup_seconds;  /* Ignore measurements during startup */
+	char     output_path[256];
+	int      output_path_set;
 };
 
 void config_set_defaults(struct sv_config *cfg);
